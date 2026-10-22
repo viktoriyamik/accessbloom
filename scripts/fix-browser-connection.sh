@@ -5,6 +5,10 @@ set -Eeuo pipefail
 cd /home/lihvool/accessbloom
 ip=$(docker inspect accessbloom-browser-worker --format '{{with index .NetworkSettings.Networks "accessbloom-worker-control"}}{{.IPAddress}}{{end}}')
 [[ $ip =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Browser control IP unavailable"; exit 1; }
+control_id=$(docker network inspect accessbloom-worker-control --format '{{.Id}}')
+iface="br-${control_id:0:12}"
+echo "Allowing only established Playwright WebSocket replies from $ip:3000..."
+iptables -C INPUT -i "$iface" -s "$ip" -p tcp --sport 3000 -m conntrack --ctstate ESTABLISHED -j ACCEPT 2>/dev/null || iptables -I INPUT 1 -i "$iface" -s "$ip" -p tcp --sport 3000 -m conntrack --ctstate ESTABLISHED -j ACCEPT
 echo "Testing browser through its dedicated control bridge..."
 BROWSER_WS="ws://$ip:3000/" node --input-type=module -e '
 import {chromium} from "playwright";
