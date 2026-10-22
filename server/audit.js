@@ -15,6 +15,7 @@ export async function auditPage(value, {allowedHosts=parseAllowed(process.env.SC
       browser=await chromium.launch({headless:true,args:['--disable-dev-shm-usage','--no-first-run']});
     }
     const context=await browser.newContext({viewport:{width:1366,height:880},deviceScaleFactor:1,serviceWorkers:'block',acceptDownloads:false,
+      ...(process.env.AUDIT_BROWSER_WS?{proxy:{server:'http://accessbloom-egress-proxy:3128'}}:{}),
       permissions:[],ignoreHTTPSErrors:false,javaScriptEnabled:true});
     // Block private/loopback request targets, unsupported schemes, and external navigations.
     // Production still needs container-level egress firewall isolation against DNS rebinding.
