@@ -4,10 +4,16 @@ import { enrichReport } from './ai.js';
 
 export async function auditPage(value, {allowedHosts=parseAllowed(process.env.SCAN_ALLOWED_HOSTS||'')}={}) {
   const start=await verifyExternal(value, allowedHosts);
+  if(process.env.PUBLIC_SCANS_ENABLED==='true' && start.protocol!=='https:') throw new Error('Public scanning accepts HTTPS websites only.');
   const [{ chromium }, { default: AxeBuilder }] = await Promise.all([import('playwright'),import('@axe-core/playwright')]);
   let browser;
   try {
-    browser=await chromium.launch({headless:true,args:['--disable-dev-shm-usage','--no-first-run']});
+    if(process.env.AUDIT_BROWSER_WS){
+      browser=await chromium.connect(process.env.AUDIT_BROWSER_WS,{timeout:10000});
+    }else{
+      if(process.env.PUBLIC_SCANS_ENABLED==='true') throw new Error('Public scanning requires an isolated remote browser.');
+      browser=await chromium.launch({headless:true,args:['--disable-dev-shm-usage','--no-first-run']});
+    }
     const context=await browser.newContext({viewport:{width:1366,height:880},deviceScaleFactor:1,serviceWorkers:'block',acceptDownloads:false,
       permissions:[],ignoreHTTPSErrors:false,javaScriptEnabled:true});
     // Block private/loopback request targets, unsupported schemes, and external navigations.
