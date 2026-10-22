@@ -18,6 +18,11 @@ control_id=$(docker network inspect accessbloom-worker-control --format '{{.Id}}
 control_bridge="br-${control_id:0:12}"
 iptables -C INPUT -i "$bridge" -j REJECT 2>/dev/null || iptables -I INPUT 1 -i "$bridge" -j REJECT
 iptables -C INPUT -i "$control_bridge" -j REJECT 2>/dev/null || iptables -I INPUT 1 -i "$control_bridge" -j REJECT
+# Permit only replies to connections initiated by the VPS to the worker WebSocket port.
+worker_ip=$(docker inspect accessbloom-browser-worker --format '{{with index .NetworkSettings.Networks "accessbloom-worker-control"}}{{.IPAddress}}{{end}}' 2>/dev/null || true)
+if [[ -n "$worker_ip" ]]; then
+ iptables -C INPUT -i "$control_bridge" -s "$worker_ip" -p tcp --sport 3000 -m conntrack --ctstate ESTABLISHED -j ACCEPT 2>/dev/null || iptables -I INPUT 1 -i "$control_bridge" -s "$worker_ip" -p tcp --sport 3000 -m conntrack --ctstate ESTABLISHED -j ACCEPT
+fi
 iptables -C DOCKER-USER -i "$control_bridge" ! -o "$bridge" -j DROP 2>/dev/null || iptables -I DOCKER-USER 1 -i "$control_bridge" ! -o "$bridge" -j DROP
 # Persist the host gateway firewall guard across reboots.
 cat >/usr/local/sbin/accessbloom-bridge-guard <<'GUARD'
@@ -29,6 +34,10 @@ control_id=$(docker network inspect accessbloom-worker-control --format '{{.Id}}
 control="br-${control_id:0:12}"
 iptables -C INPUT -i "$iface" -j REJECT 2>/dev/null || iptables -I INPUT 1 -i "$iface" -j REJECT
 iptables -C INPUT -i "$control" -j REJECT 2>/dev/null || iptables -I INPUT 1 -i "$control" -j REJECT
+worker_ip=$(docker inspect accessbloom-browser-worker --format '{{with index .NetworkSettings.Networks "accessbloom-worker-control"}}{{.IPAddress}}{{end}}' 2>/dev/null || true)
+if [[ -n "$worker_ip" ]]; then
+ iptables -C INPUT -i "$control" -s "$worker_ip" -p tcp --sport 3000 -m conntrack --ctstate ESTABLISHED -j ACCEPT 2>/dev/null || iptables -I INPUT 1 -i "$control" -s "$worker_ip" -p tcp --sport 3000 -m conntrack --ctstate ESTABLISHED -j ACCEPT
+fi
 iptables -C DOCKER-USER -i "$control" ! -o "$iface" -j DROP 2>/dev/null || iptables -I DOCKER-USER 1 -i "$control" ! -o "$iface" -j DROP
 GUARD
 chmod 0755 /usr/local/sbin/accessbloom-bridge-guard
