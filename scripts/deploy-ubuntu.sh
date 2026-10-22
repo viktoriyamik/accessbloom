@@ -27,6 +27,11 @@ DATA_DIR=/var/lib/accessbloom
 SCAN_ACCESS_TOKEN=$SECRET
 SCAN_ALLOWED_HOSTS=vik.ooo,haesiivooja.fi
 MAX_SCAN_PER_HOUR=20
+PUBLIC_SCANS_ENABLED=false
+PUBLIC_SCAN_PER_HOUR=3
+PUBLIC_SCAN_DAILY=25
+AI_MONTHLY_BUDGET_EUR=5
+AI_RESERVATION_EUR=0.10
 AI_ENABLED=true
 OPENAI_MODEL=gpt-4.1-mini
 OPENAI_API_KEY=
@@ -87,4 +92,4 @@ echo
 echo 'Installed service and Nginx snippet; existing portfolio untouched.'
 echo 'NEXT: edit the vik.ooo HTTPS server block and add: include /etc/nginx/snippets/accessbloom.conf;'
 echo 'Then: sudo nginx -t && sudo systemctl reload nginx'
-echo 'Before allowing scans of public sites, enforce outbound firewall restrictions against SSRF/DNS rebinding.'
+echo 'Anonymous scanning stays disabled until PUBLIC_SCANS_ENABLED=true is set after independent network egress isolation has been verified.'
