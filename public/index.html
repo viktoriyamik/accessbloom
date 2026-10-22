@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="theme-color" content="#f8f9fd"/>
+<meta name="description" content="AccessBloom combines automated accessibility evidence and explainable AI recommendations in a human-centered audit workspace."/>
+<title>AccessBloom — Accessibility insights for inclusive design</title>
+<link rel="icon" href="./favicon.svg" type="image/svg+xml"/><link rel="stylesheet" href="./styles.css"/>
+<script type="module" src="./app.js"></script></head><body>
+<div class="app-shell">
+ <aside class="sidebar" id="sidebar">
+   <a class="brand" href="#overview" aria-label="AccessBloom home"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M16 16c-7-9-1-15 3-11 4 4 2 8-3 11Zm0 0c9-7 15-1 11 3-4 4-8 2-11-3Zm0 0c7 9 1 15-3 11-4-4-2-8 3-11Zm0 0C7 23 1 17 5 13c4-4 8-2 11 3Z"/><circle cx="16" cy="16" r="2"/></svg></span><span>accessbloom<small>INCLUSIVE DESIGN INTELLIGENCE</small></span></a>
+   <div class="nav-label">WORKSPACE</div>
+   <nav class="main-nav" aria-label="Primary navigation">
+     <button class="nav-item active" data-view="overview"><span class="ico" data-icon="grid"></span>Overview</button>
+     <button class="nav-item" data-view="scan"><span class="ico" data-icon="scan"></span>New analysis</button>
+     <button class="nav-item" data-view="reports"><span class="ico" data-icon="files"></span>Audit history <span class="nav-count" id="report-count">0</span></button>
+     <button class="nav-item" data-view="compare"><span class="ico" data-icon="compare"></span>Compare results</button>
+   </nav>
+   <div class="nav-label nav-label-second">EXPLORE</div>
+   <nav class="main-nav" aria-label="Reference navigation">
+     <button class="nav-item" data-view="guide"><span class="ico" data-icon="book"></span>Review checklist</button>
+     <button class="nav-item" data-view="about"><span class="ico" data-icon="info"></span>About AccessBloom</button>
+   </nav>
+   <div class="sidebar-bottom"><div class="help-card"><div class="help-icon"><span class="ico" data-icon="sparkles"></span></div><strong>Accessibility is a journey.</strong><p>Turn findings into improvements, one informed decision at a time.</p><button id="start-quick" class="text-button">Start a new analysis <span aria-hidden="true">↗</span></button></div><div class="sidebar-foot"><span class="online-dot"></span> Human-reviewed by design <small>v1.0 · Portfolio edition</small></div></div>
+ </aside>
+ <div class="main-area">
+  <header class="topbar"><div class="top-left"><button class="mobile-menu" id="mobile-menu" aria-label="Toggle navigation"><span class="ico" data-icon="menu"></span></button><span class="breadcrumb">Workspace <span>/</span> <b id="breadcrumb-active">Overview</b></span></div><div class="top-right"><span class="mode-label" id="mode-label"><span class="mode-dot"></span> Interactive demo</span><button id="owner-btn" class="owner-btn"><span class="ico" data-icon="lock"></span><span id="owner-label">Owner access</span></button><div class="avatar" aria-hidden="true">AB</div></div></header>
+  <main id="main" tabindex="-1"><section class="loading"><div class="spinner"></div>Loading workspace…</section></main>
+  <footer class="app-footer"><span>AccessBloom · Built for inclusive digital products</span><span>Automated findings are not a certification of WCAG compliance.</span></footer>
+ </div>
+</div>
+<div id="modal-root"></div><div id="toast-root" aria-live="polite" aria-atomic="true"></div>
+</body></html>
