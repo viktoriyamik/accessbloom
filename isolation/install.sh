@@ -14,6 +14,29 @@ docker network connect accessbloom-proxy-egress accessbloom-egress-proxy
 bridge_id=$(docker network inspect accessbloom-scans-internal --format '{{.Id}}')
 bridge="br-${bridge_id:0:12}"
 iptables -C INPUT -i "$bridge" -j REJECT 2>/dev/null || iptables -I INPUT 1 -i "$bridge" -j REJECT
+# Persist the host gateway firewall guard across reboots.
+cat >/usr/local/sbin/accessbloom-bridge-guard <<'GUARD'
+#!/bin/bash
+set -euo pipefail
+network_id=$(docker network inspect accessbloom-scans-internal --format '{{.Id}}')
+iface="br-${network_id:0:12}"
+iptables -C INPUT -i "$iface" -j REJECT 2>/dev/null || iptables -I INPUT 1 -i "$iface" -j REJECT
+GUARD
+chmod 0755 /usr/local/sbin/accessbloom-bridge-guard
+cat >/etc/systemd/system/accessbloom-bridge-guard.service <<'UNIT'
+[Unit]
+Description=Block AccessBloom internal Docker network from VPS host
+Requires=docker.service
+After=docker.service
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/accessbloom-bridge-guard
+RemainAfterExit=yes
+[Install]
+WantedBy=multi-user.target
+UNIT
+systemctl daemon-reload
+systemctl enable --now accessbloom-bridge-guard.service
 
 docker run -d --name accessbloom-browser-worker --restart unless-stopped --network accessbloom-scans-internal --cap-drop=ALL --security-opt no-new-privileges --ipc=private --shm-size=256m --read-only --tmpfs /tmp:rw,nosuid,size=256m --memory 1000m --cpus 1.5 --pids-limit 200 -p 127.0.0.1:4120:3000 accessbloom-playwright-worker:local >/dev/null
 echo 'Worker/proxy containers installed. Verify proxy policies and gateway isolation before enabling scans.'
