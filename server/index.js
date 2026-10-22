@@ -1,4 +1,5 @@
 import http from 'node:http';
+import net from 'node:net';
 import {readFileSync, writeFileSync, existsSync, unlinkSync, mkdirSync} from 'node:fs';
 import {resolve,extname,join} from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -29,6 +30,7 @@ function send(res,status,data,type='application/json; charset=utf-8'){
 }
 function failure(res,status,message){send(res,status,{error:message});}
 async function body(req){let raw='';for await(const chunk of req){raw+=chunk;if(raw.length>12000) throw new Error('Request too large.');}try{return JSON.parse(raw||'{}');}catch{throw new Error('Invalid JSON.');}}
+function clientIp(req){const remote=req.socket.remoteAddress||'';const loopback=remote==='127.0.0.1'||remote==='::1'||remote==='::ffff:127.0.0.1';const forwarded=req.headers['x-real-ip'];return loopback&&typeof forwarded==='string'&&net.isIP(forwarded)?forwarded:remote;}
 function publicLimit(ip){const now=Date.now(),day=new Date(now).toISOString().slice(0,10);if(publicCounter.day!==day){publicCounter.day=day;publicCounter.count=0;}const times=(publicRate.get(ip)||[]).filter(t=>now-t<3600000);if(times.length>=publicHourly||publicCounter.count>=publicDaily)return false;times.push(now);publicRate.set(ip,times);publicCounter.count++;if(publicRate.size>3000)for(const [key,value] of publicRate)if(!value.some(t=>now-t<3600000))publicRate.delete(key);return true;}
 function limit(ip){const now=Date.now();const items=(rate.get(ip)||[]).filter(t=>now-t<3600_000);if(items.length>=maxPerHour)return false;items.push(now);rate.set(ip,items);if(rate.size>500)for(const [k,v] of rate)if(!v.some(t=>now-t<3600_000))rate.delete(k);return true;}
 const app=http.createServer(async(req,res)=>{
@@ -45,7 +47,7 @@ const app=http.createServer(async(req,res)=>{
       if(req.method==='GET'&&rel==='/api/reports')return send(res,200,store.list());
       if(req.method==='POST'&&rel==='/api/scans'){
         if(inFlight)return failure(res,429,'A scan is already running.');
-        if(isOwner ? !limit(req.socket.remoteAddress) : !publicLimit(req.socket.remoteAddress))return failure(res,429,'Scanning limit reached. Try again later.');
+        if(isOwner ? !limit(clientIp(req)) : !publicLimit(clientIp(req)))return failure(res,429,'Scanning limit reached. Try again later.');
         const input=await body(req); normalizeUrl(input.url);inFlight=true;
         try {
           const {report,screenshotBuffer}=await auditPage(input.url,{allowedHosts:isOwner?allowed:null});
