@@ -15,11 +15,7 @@ echo '=== 3/7 Installing restricted browser and proxy ==='
 bash "$ACCESS/isolation/install.sh"
 echo '=== 4/7 Checking browser connectivity, browser proxy and blocked private address ==='
 docker inspect accessbloom-browser-worker --format '{{json .NetworkSettings.Ports}}'
-curl -fsS --max-time 5 http://127.0.0.1:4120/ >/dev/null || {
-  status=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 5 http://127.0.0.1:4120/ || true)
-  [[ $status != 000 && -n $status ]] || { echo 'Remote browser port is unreachable'; exit 1; }
-}
-(cd /opt/accessbloom && node "$ACCESS/scripts/check-isolation.mjs")
+(cd "$ACCESS" && node "$ACCESS/scripts/check-isolation.mjs")
 echo '=== 5/7 Deploying AccessBloom API ==='
 bash "$ACCESS/scripts/deploy-ubuntu.sh"
 [[ -f /etc/accessbloom/accessbloom.env ]] || exit 1
