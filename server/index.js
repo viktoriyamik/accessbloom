@@ -49,12 +49,14 @@ const app=http.createServer(async(req,res)=>{
         if(inFlight)return failure(res,429,'A scan is already running.');
         if(isOwner ? !limit(clientIp(req)) : !publicLimit(clientIp(req)))return failure(res,429,'Scanning limit reached. Try again later.');
         const input=await body(req); normalizeUrl(input.url);inFlight=true;
+        const started=Date.now(); console.info('[scan] started', {mode:isOwner?'owner':'public',host:new URL(input.url).hostname});
         try {
           const {report,screenshotBuffer}=await auditPage(input.url,{allowedHosts:isOwner?allowed:null});
+          console.info('[scan] complete', {ms:Date.now()-started,issues:report.issues.length,ai:report.aiStatus});
           if(isOwner){if(screenshotBuffer){writeFileSync(join(shotDir,report.id+'.jpg'),screenshotBuffer,{mode:0o600});report.screenshot=`${base}/api/reports/${report.id}/screenshot`;}store.put(report);}
           // Anonymous results are returned to their requesting client only, never placed in shared history.
           return send(res,201,{...report,reviews:{}});
-        }finally {inFlight=false;}
+        }catch(error){console.error('[scan] failed',{ms:Date.now()-started,error:error?.message||String(error)});throw error;}finally {inFlight=false;}
       }
       const shot=rel.match(/^\/api\/reports\/([a-f0-9-]{36})\/screenshot$/);
       if(req.method==='GET'&&shot){const f=join(shotDir,shot[1]+'.jpg');return existsSync(f)?send(res,200,readFileSync(f),'image/jpeg'):failure(res,404,'Screenshot not found.');}
@@ -71,7 +73,7 @@ const app=http.createServer(async(req,res)=>{
     if(!pathOnDisk.startsWith(root+'/'))return failure(res,403,'Forbidden.');
     const filepath=existsSync(pathOnDisk)?pathOnDisk:join(root,'index.html');
     return send(res,200,readFileSync(filepath),types[extname(filepath)]||'application/octet-stream');
-  }catch(e){const userErrors=/invalid|valid |approved|local |standard ports|shorter|not allowed|domain |URL/i.test(e.message);failure(res,userErrors?400:500,userErrors?e.message:`Request failed: ${String(e.message).slice(0,240)}`);}
+  }catch(e){const userErrors=/invalid|valid |approved|local |standard ports|shorter|not allowed|domain |URL/i.test(e.message);failure(res,userErrors?400:500,userErrors?e.message:'Website analysis failed. Check the server log for details.');}
 });
 const port=Number(process.env.PORT||4117), host=process.env.HOST||'127.0.0.1';
 app.listen(port,host,()=>console.log(`AccessBloom listening on http://${host}:${port}${base}/`));
