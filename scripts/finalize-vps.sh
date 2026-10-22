@@ -7,8 +7,8 @@ ACCESS=/home/lihvool/accessbloom
 PORTFOLIO=/home/lihvool/viki
 [[ -d $ACCESS/.git && -d $PORTFOLIO/.git ]] || { echo 'Missing checkout';exit 1; }
 echo '=== 1/7 Updating repositories ==='
-git -C "$ACCESS" pull --ff-only origin main
-git -C "$PORTFOLIO" pull --ff-only origin main
+runuser -u lihvool -- git -C "$ACCESS" pull --ff-only origin main
+runuser -u lihvool -- git -C "$PORTFOLIO" pull --ff-only origin main
 echo '=== 2/7 Checking scanner code ==='
 (cd "$ACCESS" && npm run check)
 echo '=== 3/7 Installing restricted browser and proxy ==='
@@ -33,7 +33,7 @@ systemctl restart accessbloom
 curl -fsS http://127.0.0.1:4117/accessbloom/api/health
 echo
 echo '=== 6/7 Building portfolio frontend ==='
-(cd "$PORTFOLIO" && npm ci --no-audit --no-fund && npm run build)
+runuser -u lihvool -- bash -c 'cd /home/lihvool/viki && npm ci --no-audit --no-fund && npm run build'
 echo '=== 7/7 Restart portfolio AI with root PM2 and validate Nginx ==='
 if env PM2_HOME=/root/.pm2 pm2 describe portfolio-ai >/dev/null 2>&1; then
  env PM2_HOME=/root/.pm2 pm2 restart portfolio-ai
