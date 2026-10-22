@@ -16,6 +16,11 @@ const base=(process.env.BASE_PATH||'/accessbloom').replace(/\/$/,'');
 const secret=process.env.SCAN_ACCESS_TOKEN||'';
 const allowed=parseAllowed(process.env.SCAN_ALLOWED_HOSTS||'');
 const maxPerHour=Number(process.env.MAX_SCAN_PER_HOUR||20);
+const publicEnabled=process.env.PUBLIC_SCANS_ENABLED==='true';
+const publicHourly=Math.max(1,Number(process.env.PUBLIC_SCAN_PER_HOUR||3));
+const publicDaily=Math.max(1,Number(process.env.PUBLIC_SCAN_DAILY||25));
+const publicCounter={day:'',count:0};
+const publicRate=new Map();
 const rate=new Map(); let inFlight=false;
 const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml','.png':'image/png','.webp':'image/webp','.ico':'image/x-icon','.json':'application/json; charset=utf-8'};
 function send(res,status,data,type='application/json; charset=utf-8'){
@@ -24,6 +29,7 @@ function send(res,status,data,type='application/json; charset=utf-8'){
 }
 function failure(res,status,message){send(res,status,{error:message});}
 async function body(req){let raw='';for await(const chunk of req){raw+=chunk;if(raw.length>12000) throw new Error('Request too large.');}try{return JSON.parse(raw||'{}');}catch{throw new Error('Invalid JSON.');}}
+function publicLimit(ip){const now=Date.now(),day=new Date(now).toISOString().slice(0,10);if(publicCounter.day!==day){publicCounter.day=day;publicCounter.count=0;}const times=(publicRate.get(ip)||[]).filter(t=>now-t<3600000);if(times.length>=publicHourly||publicCounter.count>=publicDaily)return false;times.push(now);publicRate.set(ip,times);publicCounter.count++;if(publicRate.size>3000)for(const [key,value] of publicRate)if(!value.some(t=>now-t<3600000))publicRate.delete(key);return true;}
 function limit(ip){const now=Date.now();const items=(rate.get(ip)||[]).filter(t=>now-t<3600_000);if(items.length>=maxPerHour)return false;items.push(now);rate.set(ip,items);if(rate.size>500)for(const [k,v] of rate)if(!v.some(t=>now-t<3600_000))rate.delete(k);return true;}
 const app=http.createServer(async(req,res)=>{
   try {
@@ -31,19 +37,21 @@ const app=http.createServer(async(req,res)=>{
     const rel=path.startsWith(base+'/')?path.slice(base.length):path===base?'/':null;
     if(rel===null) return failure(res,404,'Not found.');
     if(req.method==='GET'&&rel==='/api/health')return send(res,200,{status:'ok',version:'1.0.0'});
-    if(req.method==='GET'&&rel==='/api/config')return send(res,200,{base,aiConfigured:!!process.env.OPENAI_API_KEY&&process.env.AI_ENABLED!=='false',ownerAuthConfigured:secret.length>=24,realScanAvailable:!!allowed.length,demoAvailable:true});
+    if(req.method==='GET'&&rel==='/api/config')return send(res,200,{base,aiConfigured:!!process.env.OPENAI_API_KEY&&process.env.AI_ENABLED!=='false',ownerAuthConfigured:secret.length>=24,realScanAvailable:publicEnabled||!!allowed.length,publicScansEnabled:publicEnabled,demoAvailable:true});
     if(req.method==='GET'&&rel==='/api/demo')return send(res,200,createDemo());
     if(rel.startsWith('/api/')){
-      if(!authorized(req,secret))return failure(res,401,'Owner access token is required for live scans and saved results.');
+      const isOwner=authorized(req,secret);
+      if(!isOwner && !(publicEnabled && req.method==='POST' && rel==='/api/scans'))return failure(res,401,'Owner access is required for saved reports.');
       if(req.method==='GET'&&rel==='/api/reports')return send(res,200,store.list());
       if(req.method==='POST'&&rel==='/api/scans'){
         if(inFlight)return failure(res,429,'A scan is already running.');
-        if(!limit(req.socket.remoteAddress))return failure(res,429,'Hourly scanning limit reached.');
+        if(isOwner ? !limit(req.socket.remoteAddress) : !publicLimit(req.socket.remoteAddress))return failure(res,429,'Scanning limit reached. Try again later.');
         const input=await body(req); normalizeUrl(input.url);inFlight=true;
         try {
-          const {report,screenshotBuffer}=await auditPage(input.url,{allowedHosts:allowed});
-          if(screenshotBuffer){writeFileSync(join(shotDir,report.id+'.jpg'),screenshotBuffer,{mode:0o600});report.screenshot=`${base}/api/reports/${report.id}/screenshot`;}
-          store.put(report);return send(res,201,{...report,reviews:{}});
+          const {report,screenshotBuffer}=await auditPage(input.url,{allowedHosts:isOwner?allowed:null});
+          if(isOwner){if(screenshotBuffer){writeFileSync(join(shotDir,report.id+'.jpg'),screenshotBuffer,{mode:0o600});report.screenshot=`${base}/api/reports/${report.id}/screenshot`;}store.put(report);}
+          // Anonymous results are returned to their requesting client only, never placed in shared history.
+          return send(res,201,{...report,reviews:{}});
         }finally {inFlight=false;}
       }
       const shot=rel.match(/^\/api\/reports\/([a-f0-9-]{36})\/screenshot$/);

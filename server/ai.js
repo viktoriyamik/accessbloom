@@ -1,9 +1,15 @@
+import {readFileSync,writeFileSync,renameSync,existsSync,mkdirSync} from 'node:fs';
+import {join} from 'node:path';
+// Conservative reservation per AI enrichment; the monthly ledger persists across service restarts.
+const budgetPath=join(process.env.DATA_DIR||'/var/lib/accessbloom','ai-budget.json');
+function reserveAI(){const maximum=Math.max(0,Number(process.env.AI_MONTHLY_BUDGET_EUR||5));const charge=Math.max(.01,Number(process.env.AI_RESERVATION_EUR||.10));const month=new Date().toISOString().slice(0,7);let data={month,spent:0};try{if(existsSync(budgetPath))data=JSON.parse(readFileSync(budgetPath,'utf8'));}catch{}if(data.month!==month)data={month,spent:0};if(data.spent+charge>maximum+.000001)return false;data.spent=Math.round((data.spent+charge)*100)/100;mkdirSync(join(budgetPath,'..'),{recursive:true});const tmp=budgetPath+'.tmp';writeFileSync(tmp,JSON.stringify(data),{mode:0o600});renameSync(tmp,budgetPath);return true;}
 // Optional AI enrichment. All findings are produced by axe; the model only explains verified evidence.
 export async function enrichReport(report, screenshotBuffer, {apiKey=process.env.OPENAI_API_KEY, model=process.env.OPENAI_MODEL||'gpt-4.1-mini'}={}) {
   if (!apiKey || process.env.AI_ENABLED === 'false') return {...report, aiStatus:'not-configured', aiSummary:'AI enrichment is not configured. The findings below come from automated checks.'};
   const evidence = report.issues.slice(0,20).map(x=>({id:x.id,rule:x.rule,impact:x.impact,title:x.title,selector:x.selector,
     html:x.html.slice(0,500),failureSummary:x.failureSummary.slice(0,700),wcag:x.wcag}));
   if (!evidence.length) return {...report,aiStatus:'not-needed',aiSummary:'No automated violations were found in this scan. Complete the manual checks before making accessibility claims.'};
+  if(!reserveAI()) return {...report,aiStatus:'budget-exceeded',aiSummary:'Monthly AccessBloom AI allowance has been reached. Automated accessibility findings remain available.'};
   const content=[{type:'input_text',text:JSON.stringify({page:report.url,title:report.title,evidence})}];
   // Screenshot is intentionally downsampled and only sent if an operator configured the API key.
   if (screenshotBuffer?.length && screenshotBuffer.length < 1_500_000) content.push({type:'input_image',image_url:`data:image/jpeg;base64,${screenshotBuffer.toString('base64')}`,detail:'low'});
