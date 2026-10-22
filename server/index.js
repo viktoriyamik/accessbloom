@@ -16,7 +16,7 @@ const base=(process.env.BASE_PATH||'/accessbloom').replace(/\/$/,'');
 const secret=process.env.SCAN_ACCESS_TOKEN||'';
 const allowed=parseAllowed(process.env.SCAN_ALLOWED_HOSTS||'');
 const maxPerHour=Number(process.env.MAX_SCAN_PER_HOUR||20);
-const publicEnabled=process.env.PUBLIC_SCANS_ENABLED==='true';
+const publicEnabled=process.env.PUBLIC_SCANS_ENABLED==='true' && !!process.env.AUDIT_BROWSER_WS;
 const publicHourly=Math.max(1,Number(process.env.PUBLIC_SCAN_PER_HOUR||3));
 const publicDaily=Math.max(1,Number(process.env.PUBLIC_SCAN_DAILY||25));
 const publicCounter={day:'',count:0};
