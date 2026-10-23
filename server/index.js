@@ -58,7 +58,7 @@ const app=http.createServer(async(req,res)=>{
           console.info('[scan] complete', {ms:Date.now()-started,issues:report.issues.length,ai:report.aiStatus});
           if(isOwner){if(screenshotBuffer){writeFileSync(join(shotDir,report.id+'.jpg'),screenshotBuffer,{mode:0o600});report.screenshot=`${base}/api/reports/${report.id}/screenshot`;}store.put(report);}
           // Anonymous results are returned to their requesting client only, never placed in shared history.
-          return send(res,201,{...report,reviews:{},...(!isOwner && screenshotBuffer?{previewImage:'data:image/jpeg;base64,'+screenshotBuffer.toString('base64')}: {})});
+          return send(res,201,{...report,reviews:{},...(screenshotBuffer?{previewImage:'data:image/jpeg;base64,'+screenshotBuffer.toString('base64')}: {})});
         }catch(error){if(!isOwner)refundPublic(clientIp(req));console.error('[scan] failed',{ms:Date.now()-started,error:error?.message||String(error)});throw error;}finally {inFlight=false;}
       }
       const shot=rel.match(/^\/api\/reports\/([a-f0-9-]{36})\/screenshot$/);
