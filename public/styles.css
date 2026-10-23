@@ -3,3 +3,10 @@
 @media(max-width:850px){.sidebar{position:fixed;transform:translateX(-100%);transition:transform .2s;width:250px;box-shadow:20px 0 50px #20233c1a}.sidebar.open{transform:translateX(0)}.mobile-menu{display:inline-flex}.topbar{padding:0 22px}.cols-2{grid-template-columns:1fr}.cards-stats{grid-template-columns:repeat(2,1fr)}.hero-art{opacity:.4;right:12px}.hero-content{max-width:470px}.scan-info{grid-template-columns:1fr}.guide-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:570px){.main-area main{padding:23px 16px}.topbar{height:62px;padding:0 14px}.mode-label{display:none}.top-right{gap:9px}.owner-btn{padding:8px}.owner-btn .ico{display:none}.avatar{display:none}.breadcrumb{font-size:11px}.hero{padding:27px 23px;min-height:240px}.hero-art{opacity:.16;right:-50px}.hero h2{font-size:23px}.cards-stats{gap:9px}.metric{padding:14px}.metric-top{font-size:10px}.metric-value{font-size:26px}.page-heading{flex-direction:column}.page-heading h1{font-size:27px}.audit-head{flex-direction:column}.audit-metrics{grid-template-columns:repeat(2,1fr)}.input-line{flex-direction:column}.scan-box{padding:20px}.scan-hero h1{font-size:30px}.scan-controls{align-items:flex-start;flex-direction:column}.compare-grid,.delta,.about-row,.guide-grid{grid-template-columns:1fr}.review-bar{grid-template-columns:1fr}.app-footer{padding:14px 18px;flex-direction:column}.finding-header{padding:13px;gap:7px}.badge{font-size:9px}}
 @media print{.sidebar,.topbar,.app-footer,.button,.link-button,.tabs,.tabbar,.findings-toolbar,.review-bar,.owner-btn{display:none!important}.main-area main{padding:0}.panel,.metric,.finding{break-inside:avoid;box-shadow:none}.app-shell{display:block}}
+
+/* Clear portfolio and report navigation */
+.portfolio-return{font-size:12px;font-weight:800;color:#6054bf;text-decoration:none;border:1px solid #ddd8f9;border-radius:8px;padding:9px 12px;white-space:nowrap}
+.portfolio-return:hover{background:#f3f0ff;text-decoration:none}
+.report-back{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:22px}
+.tabbar .tab.active{border-bottom:3px solid var(--accent);color:var(--accent)}
+.screen-shot{image-rendering:auto;object-fit:contain;max-height:720px}
