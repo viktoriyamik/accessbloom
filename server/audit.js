@@ -46,7 +46,7 @@ export async function auditPage(value, {allowedHosts=parseAllowed(process.env.SC
     const title=(await page.title()).slice(0,160);
     const axe=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21a','wcag21aa','wcag22aa','best-practice']).analyze();
     stageLog('capturing screenshot');
-    const screenshotBuffer=await page.screenshot({type:'jpeg',quality:58,fullPage:false,animations:'disabled',timeout:10000});
+    const screenshotBuffer=await page.screenshot({type:'jpeg',quality:82,fullPage:false,animations:'disabled',timeout:10000});
     let report=prepareReport({url:start.toString(),title,violations:axe.violations,incomplete:axe.incomplete,passes:axe.passes.length});
     stageLog('generating AI guidance');
     report=await enrichReport(report,screenshotBuffer);
