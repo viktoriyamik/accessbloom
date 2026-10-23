@@ -10,3 +10,6 @@
 .report-back{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:22px}
 .tabbar .tab.active{border-bottom:3px solid var(--accent);color:var(--accent)}
 .screen-shot{image-rendering:auto;object-fit:contain;max-height:720px}
+
+/* Sharp website preview and usable full-size inspection */
+.screenshot-open{display:block;padding:0;border:0;background:transparent;width:100%;cursor:zoom-in;text-align:left}.screenshot-open .screen-shot{width:100%;height:auto;max-height:none;object-fit:contain}.screenshot-open:hover .screen-shot{outline:2px solid var(--accent);outline-offset:2px}.screenshot-modal-cover{z-index:1000!important;padding:24px!important;align-items:center!important;justify-content:center!important}.screenshot-modal{background:#fff;width:min(96vw,1500px);max-height:94vh;display:flex;flex-direction:column;border-radius:14px;overflow:hidden;box-shadow:0 20px 70px #0005}.screenshot-modal-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;border-bottom:1px solid var(--border)}.screenshot-modal-content{overflow:auto;padding:16px;background:#f4f5fa;text-align:center}.screenshot-modal-content img{display:block;width:auto;max-width:none;height:auto;margin:auto;border:1px solid var(--border)}
